@@ -1,0 +1,180 @@
+{% extends 'competicion/base.html' %}
+
+{% block title %}Lista de Competidores{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 d-flex justify-content-between">
+    <span>Lista de Competidores</span>
+    <span id="cronometro" class="digital-clock">00:00:00</span>
+</h1>
+
+<div class="d-flex mb-3">
+    <a href="{% url 'agregar_competidor' %}" class="btn btn-success me-2">Agregar Competidor</a>
+    <button class="btn btn-danger me-2" onclick="eliminarDatos()">Eliminar Todos los Datos</button>
+    
+    <input type="text" id="buscarId" class="form-control me-2" placeholder="ID del Corredor">
+    <button class="btn btn-primary" onclick="detenerPorId()">Detener por ID</button>
+</div>
+
+<div class="mb-3">
+    {% for letra in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+    <button class="btn btn-secondary me-1 mb-1" onclick="confirmarInicioCarreraCategoria('{{ letra }}')">
+        Iniciar {{ letra }}
+    </button>
+    {% endfor %}
+</div>
+
+<div class="row">
+    {% for competidor in competidores %}
+    <div class="col-md-3 mb-3">
+        <button class="btn btn-primary w-100 mb-2" onclick="confirmarInicioCarrera({{ competidor.id }})">
+            Iniciar {{ competidor.numero_corredor }}
+        </button>
+        <button class="btn btn-danger w-100" onclick="finalizarCarrera({{ competidor.id }})">
+            Detener {{ competidor.numero_corredor }}
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<a href="{% url 'mostrar_resultados' %}" class="btn btn-info mt-3">Mostrar Resultados</a>
+
+<script>
+let cronometroInterval;
+
+function confirmarInicioCarrera(id) {
+    if (confirm('¿Estás seguro de que deseas iniciar la carrera para este competidor?')) {
+        iniciarCarrera(id);
+    }
+}
+
+function confirmarInicioCarreraCategoria(categoria) {
+    if (confirm(`¿Estás seguro de que deseas iniciar la carrera para la categoría ${categoria}?`)) {
+        iniciarCarreraCategoria(categoria);
+    }
+}
+
+function iniciarCarrera(id) {
+    fetch(`/competicion/iniciar/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    }).then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              if (!cronometroInterval) {
+                  iniciarCronometro();
+              }
+              location.reload();
+          } else {
+              alert('Error: ' + data.message);
+          }
+      });
+}
+
+function iniciarCarreraCategoria(categoria) {
+    fetch(`/competicion/iniciar_categoria/${categoria}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    }).then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              if (!cronometroInterval) {
+                  iniciarCronometro();
+              }
+              location.reload();
+          } else {
+              alert('Error: ' + data.message);
+          }
+      });
+}
+
+function finalizarCarrera(id) {
+    fetch(`/competicion/finalizar/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    }).then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              location.reload();
+          } else {
+              alert('Error: ' + data.message);
+          }
+      });
+}
+
+function eliminarDatos() {
+    if (confirm('¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.')) {
+        fetch(`/competicion/eliminar_datos/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  location.reload();
+              } else {
+                  alert('Error: ' + data.message);
+              }
+          });
+    }
+}
+
+function detenerPorId() {
+    const id = document.getElementById('buscarId').value;
+    if (id) {
+        // Convertir ID a número
+        const idNumerico = parseInt(id, 10);
+
+        // Verificar que el ID es un número válido
+        if (!isNaN(idNumerico)) {
+            fetch(`/competicion/finalizar_numero/${idNumerico}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.status === 'success') {
+                      document.getElementById('buscarId').value = '';  // Limpiar el área de texto
+                      location.reload();
+                  } else {
+                      alert('Error: ' + data.message);
+                  }
+              });
+        } else {
+            alert('Por favor, ingresa un ID de corredor válido.');
+        }
+    } else {
+        alert('Por favor, ingresa un ID de corredor válido.');
+    }
+}
+
+function iniciarCronometro() {
+    const cronometro = document.getElementById('cronometro');
+    let segundos = 0;
+    cronometroInterval = setInterval(() => {
+        segundos++;
+        const horas = Math.floor(segundos / 3600);
+        const minutos = Math.floor((segundos % 3600) / 60);
+        const segundosRestantes = segundos % 60;
+        cronometro.innerText = `
+            ${horas.toString().padStart(2, '0')}:
+            ${minutos.toString().padStart(2, '0')}:
+            ${segundosRestantes.toString().padStart(2, '0')}
+        `.replace(/\s/g, '');
+    }, 1000);
+}
+</script>
+{% endblock %}

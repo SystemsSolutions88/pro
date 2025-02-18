@@ -1,0 +1,65 @@
+{% extends 'competicion/base.html' %}
+
+{% block title %}Resultados de la Competición{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Resultados de la Competición</h1>
+
+<!-- Tabla General -->
+<h2>Resultados Generales</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">Competidor</th>
+            <th scope="col">Pista</th>
+            <th scope="col">Tiempo</th>
+            <th scope="col">Posición</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for resultado in resultados %}
+        <tr>
+            <td>{{ resultado.competidor.nombre }}</td>
+            <td>{{ resultado.competidor.pista }}</td>
+            <td>{{ resultado.tiempo_total }}</td>
+            <td>{{ resultado.posicion }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay resultados disponibles.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Resultados por Categoría -->
+{% for categoria, resultados_categoria in resultados_por_categoria.items %}
+    <h2>Resultados Categoría {{ categoria }}</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Competidor</th>
+                <th scope="col">Pista</th>
+                <th scope="col">Tiempo</th>
+                <th scope="col">Posición</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resultado in resultados_categoria %}
+            <tr>
+                <td>{{ resultado.competidor.nombre }}</td>
+                <td>{{ resultado.competidor.pista }}</td>
+                <td>{{ resultado.tiempo_total }}</td>
+                <td>{{ resultado.posicion_categoria }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No hay resultados disponibles para esta categoría.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
+
+<a href="{% url 'lista_competidores' %}" class="btn btn-secondary">Volver a la lista de competidores</a>
+{% endblock %}
